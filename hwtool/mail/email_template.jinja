@@ -1,0 +1,38 @@
+<html>
+
+<body>
+	<div style="display: grid; row-gap: 16px;">
+		<div>
+			同学您好！这是本次作业批改情况，若有疑问请私聊助教 😉
+		</div>
+		<div>
+			<b>{{main_score }}</b>
+		</div>
+		<div>
+			<table border="1" cellspacing="0" cellpadding="4px">
+				<thead>
+					<tr>
+						{% for k in scores.keys() %}
+						<th align="center">{{ k }}</th>
+						{% endfor %}
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						{% for v in scores.values() %}
+						<td align="center">{{ v }}</td>
+						{% endfor %}
+					</tr>
+				</tbody>
+			</table>
+		</div>
+		<div>
+			{{ remarks }}
+		</div>
+		<div>
+			附件包含具体批注，请查收 😊
+		</div>
+	</div>
+</body>
+
+</html>
