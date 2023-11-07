@@ -103,6 +103,7 @@ def main(path: str, dest: str):
         name_dict[row["姓名"]] = one_path
 
     with support_gbk(zipfile.ZipFile(path)) as z:
+        print(f"Extracting {path}...")
         nl = z.namelist()
         for n in nl:
             if n.endswith(".rtf"):
@@ -114,6 +115,7 @@ def main(path: str, dest: str):
     for p in name_dict.values():
         attach = p / "attach"
         if attach.exists():
+            print(f"Processing {p}...")
             for f in attach.iterdir():
                 if f.is_file() and f.suffix in extractors:
                     auto_extract(f, p)
