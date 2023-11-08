@@ -6,7 +6,7 @@
 			同学您好！这是本次作业批改情况，若有疑问请私聊助教 😉
 		</div>
 		<div>
-			<b>{{main_score }}</b>
+			<b>{{ main_score }}</b>
 		</div>
 		<div>
 			<table border="1" cellspacing="0" cellpadding="4px">
@@ -29,9 +29,11 @@
 		<div>
 			{{ remarks }}
 		</div>
+		{% if attach %}
 		<div>
 			附件包含具体批注，请查收 😊
 		</div>
+		{% endif %}
 	</div>
 </body>
 
