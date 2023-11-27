@@ -78,6 +78,8 @@ def main():
 
     file_name = input("请选择评分文件：")
     result = pd.read_excel(file_name, dtype={"学号": str, "一卡通号": str})
+    if "分数" not in result.columns:
+        result["分数"] = result["基础分"]
     result_dict = dict(flatten([(row["学号"], row["分数"]), (row["一卡通号"], row["分数"])] for _, row in result.iterrows()))
 
     for item in not_review_list:
@@ -106,7 +108,7 @@ def main():
                     "score": score,
                     "cid": question["cid"],
                     "change_reason": "",
-                }
+                },
             )
         print(item, res.json()["message"])
 
