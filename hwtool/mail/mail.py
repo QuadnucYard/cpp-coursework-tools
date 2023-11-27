@@ -36,7 +36,9 @@ def main(result_path: str, subject: str, *, collect_path: str):
         for idx, row in df.iterrows():
             folder_name = f"{row['学号']}{row['姓名']}"
             receiver = f"{row['一卡通号']}@seu.edu.cn"
-            main_score = f"评分：{row['分数']} = {row['基础分']} + {row['附加分']}" if "附加分" in row else f"评分：{row['基础分']}"
+            main_score = (
+                f"评分：{row['分数']:.1f} = {row['基础分']:.1f} + {row['附加分']:.1f}" if "附加分" in row else f"评分：{row['基础分']:.1f}"
+            )
             # 附件
             att = list(get_different_files(folder / folder_name, collect_folder / folder_name))
             # 设置内容
