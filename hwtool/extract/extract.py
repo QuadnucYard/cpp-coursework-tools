@@ -1,17 +1,15 @@
-from pathlib import Path
 import shutil
 import zipfile
-import pandas as pd
+from pathlib import Path
+
+import pandas as pd  # type: ignore
 import py7zr
-import rarfile
-import typer
+import rarfile  # type: ignore
 
-app = typer.Typer()
-
-roster = pd.read_table("roster.tsv")
+from .gather_code import gather_codes
 
 
-def zip_dir(dirpath: Path, outFullName: Path):
+def zip_dir(dirpath: Path, outFullName: Path) -> None:
     """
     压缩指定文件夹
     :param dirpath: 目标文件夹路径
@@ -23,19 +21,19 @@ def zip_dir(dirpath: Path, outFullName: Path):
             zip.write(fpath, fpath)
 
 
-def should_include(f: Path):
+def should_include(f: Path) -> bool:
     return not (f.name.startswith("~") or f.name.startswith(".") or f.name.startswith("__"))
 
 
-def try_decode(str: str):
+def try_decode(str: str) -> str:
     try:
         string = str.encode("cp437").decode("utf-8")
-    except:
+    except Exception as _:
         string = str.encode("cp437").decode("gbk")
     return string
 
 
-def support_gbk(zip_file: zipfile.ZipFile):
+def support_gbk(zip_file: zipfile.ZipFile) -> zipfile.ZipFile:
     name_to_info = zip_file.NameToInfo
     # copy map first
     for name, info in name_to_info.copy().items():
@@ -45,22 +43,22 @@ def support_gbk(zip_file: zipfile.ZipFile):
                 info.filename = real_name
                 del name_to_info[name]
                 name_to_info[real_name] = info
-        except:
+        except Exception as _:
             ...
     return zip_file
 
 
-def auto_extract_rar(file: Path, dest: Path):
+def auto_extract_rar(file: Path, dest: Path) -> None:
     with rarfile.RarFile(file) as rar:
         rar.extractall(dest)
 
 
-def auto_extract_zip(file: Path, dest: Path):
+def auto_extract_zip(file: Path, dest: Path) -> None:
     with support_gbk(zipfile.ZipFile(file)) as zip:
         zip.extractall(dest)
 
 
-def auto_extract_7z(file: Path, dest: Path):
+def auto_extract_7z(file: Path, dest: Path) -> None:
     with py7zr.SevenZipFile(file) as fp:
         fp.extractall(dest)
 
@@ -68,7 +66,7 @@ def auto_extract_7z(file: Path, dest: Path):
 extractors = {".rar": auto_extract_rar, ".zip": auto_extract_zip, ".7z": auto_extract_7z}
 
 
-def auto_extract(file: Path, dest: Path):
+def auto_extract(file: Path, dest: Path) -> None:
     temp_path = Path(".TEMP")
     shutil.rmtree(temp_path, ignore_errors=True)
     temp_path.mkdir()
@@ -92,18 +90,20 @@ def auto_extract(file: Path, dest: Path):
     shutil.rmtree(temp_path)
 
 
-@app.command()
-def main(path: str, dest: str):
-    dest_path = Path(dest)
+def extract_archive(src_path: Path, dest_name: str, roster_path: Path, gather: bool = False) -> None:
+    roster = pd.read_table(roster_path)
+
+    dest_path = Path(".") / "collect" / dest_name
     dest_path.mkdir(parents=True, exist_ok=True)
+
     name_dict = dict[str, Path]()
-    for idx, row in roster.iterrows():
+    for _, row in roster.iterrows():
         one_path = dest_path / f"{row['学号']}{row['姓名']}"
         one_path.mkdir(exist_ok=True)
         name_dict[row["姓名"]] = one_path
 
-    with support_gbk(zipfile.ZipFile(path)) as z:
-        print(f"Extracting {path}...")
+    with support_gbk(zipfile.ZipFile(src_path)) as z:
+        print(f"Extracting {src_path}...")
         nl = z.namelist()
         for n in nl:
             if n.endswith(".rtf"):
@@ -123,10 +123,13 @@ def main(path: str, dest: str):
                     shutil.move(f, p / f.name)
             attach.rmdir()
 
-    # part1, part2 = divide(2, name_dict.values())
-    # with zipfile.ZipFile('test.zip', 'w', zipfile.ZIP_DEFLATED) as z:
-    #     z.write()
+    # 把 collect 内容复制到对应的 eval 下
+    shutil.copytree(dest_path, Path(".") / "eval" / dest_name)
 
+    # 代码汇总
+    if gather:
+        gather_codes(dest_path)
 
-if __name__ == "__main__":
-    app()
+    # 暂不支持自动分包
+
+    print("Done!")

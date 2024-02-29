@@ -1,0 +1,57 @@
+[tool.poetry]
+name = "cpp-coursework-collection-tools"
+version = "0.1.0"
+description = ""
+authors = ["QuadnucYard <2380433991@qq.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pandas = "^2.2.1"
+py7zr = "^0.20.8"
+rarfile = "^4.1"
+typer = "^0.9.0"
+typing-extensions = "^4.10.0"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.2.2"
+mypy = "^1.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.black]
+line-length = 120
+target-version = ['py311']
+
+[tool.mypy]
+strict = true
+check_untyped_defs = false
+
+[tool.ruff]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+line-length = 120
+
+[tool.ruff.lint]
+ignore = ["B008", "E711", "E712", "F403", "F405", "E402", "C901"]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+
+[tool.ruff.isort]
+known-third-party = []
