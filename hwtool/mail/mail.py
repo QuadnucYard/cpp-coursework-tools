@@ -1,33 +1,22 @@
-import filecmp
+import html
 from pathlib import Path
 
 import pandas as pd
-import typer
 from colorama import Fore
 from jinja2 import Template
 from markdown import markdown
 
-from .emailer import Emailer
+from .differ import get_all_differences, get_different_files
+from .emailer import Emailer, settings
 
-app = typer.Typer()
-
-
-def get_different_files(source: Path, base: Path):
-    base_files = {f.relative_to(base): f for f in base.glob("*.*")}
-    for f in source.glob("*.*"):
-        f_rel = f.relative_to(source)
-        if f_rel in base_files and not filecmp.cmp(base_files[f_rel], f):
-            yield f
+email_template = Template((Path(__file__).parent / "email_template.jinja").read_text(encoding="utf-8"))
 
 
-email_template = Template(Path("mail/email_template.jinja").read_text(encoding="utf-8"))
+def send_emails(folder: str, subject: str, *, preview: bool = False, send_self: bool = False) -> None:
+    collect_folder = Path(".") / "collect" / folder
+    eval_folder = Path(".") / "eval" / folder
 
-
-@app.command()
-def main(result_path: str, subject: str, *, collect_path: str):
-    folder = Path(result_path)
-    collect_folder = Path(collect_path)
-    df = pd.read_excel(folder / "eval.xlsx")
+    df = pd.read_excel(eval_folder / "eval.xlsx")
 
     i1 = df.columns.to_list().index("性别") + 1
     i2 = df.columns.to_list().index("基础分")
@@ -37,17 +26,22 @@ def main(result_path: str, subject: str, *, collect_path: str):
             folder_name = f"{row['学号']}{row['姓名']}"
             receiver = f"{row['一卡通号']}@seu.edu.cn"
             main_score = (
-                f"评分：{row['分数']:.1f} = {row['基础分']:.1f} + {row['附加分']:.1f}" if "附加分" in row else f"评分：{row['基础分']:.1f}"
+                f"评分：{row['分数']:.1f} = {row['基础分']:.1f} + {row['附加分']:.1f}"
+                if "附加分" in row
+                else f"评分：{row['基础分']:.1f}"
             )
+            diff = get_all_differences(eval_folder / folder_name, collect_folder / folder_name)
             # 附件
-            att = list(get_different_files(folder / folder_name, collect_folder / folder_name))
+            att = list(get_different_files(eval_folder / folder_name, collect_folder / folder_name))
             # 设置内容
             content = email_template.render(
                 main_score=main_score,
                 scores=row[i1:i2].to_dict(),
                 remarks=markdown(str(row["评语"]).replace("\n", "  \n")),
+                diff=[html.escape("\n".join(a)) for a in diff.values()],
                 attach=len(att) > 0,
             )
+            (Path("logs") / f"mail-{idx}.html").write_text(content, "utf-8")
             # 调试输出
             print(Fore.YELLOW, idx, end="")
             print(Fore.BLUE, folder_name, end="")
@@ -56,10 +50,11 @@ def main(result_path: str, subject: str, *, collect_path: str):
             print(Fore.CYAN, att)
             print(Fore.RESET, end="")
             # 发送邮件
+            if preview:  # 预览模式不发送邮件
+                continue
             mail = emailer.launch().subject(f"{subject} - 作业反馈").html(content)
             mail.attach_many(att)
+            if send_self:  # 如果发给自己，发一个就结束
+                mail.send(settings.SMTP_USER)
+                break
             mail.send(receiver)
-
-
-if __name__ == "__main__":
-    app()

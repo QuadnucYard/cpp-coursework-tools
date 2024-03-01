@@ -3,6 +3,8 @@ from pathlib import Path
 import typer
 from typing_extensions import Annotated
 
+from scripts.mail.mail import send_emails
+
 from .extract.extract import extract_archive
 from .extract.gather_code import gather_codes
 
@@ -17,6 +19,11 @@ def extract(path: str, dest_name: str, roster: Annotated[str, typer.Option()]) -
 @app.command()
 def gather(path: str) -> None:
     gather_codes(Path(path))
+
+
+@app.command()
+def mail(folder: str, subject: str, preview: bool = False, send_self: bool = False) -> None:
+    send_emails(folder, subject, preview=preview, send_self=send_self)
 
 
 @app.command()

@@ -1,40 +1,50 @@
 <html>
 
 <body>
-	<div style="display: grid; row-gap: 16px;">
-		<div>
-			同学您好！这是本次作业批改情况，若有疑问请私聊助教 😉
-		</div>
-		<div>
-			<b>{{ main_score }}</b>
-		</div>
-		<div>
-			<table border="1" cellspacing="0" cellpadding="4px">
-				<thead>
-					<tr>
-						{% for k in scores.keys() %}
-						<th align="center">{{ k }}</th>
-						{% endfor %}
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						{% for v in scores.values() %}
-						<td align="center">{{ v }}</td>
-						{% endfor %}
-					</tr>
-				</tbody>
-			</table>
-		</div>
-		<div>
-			{{ remarks }}
-		</div>
-		{% if attach %}
-		<div>
-			附件包含具体批注，请查收 😊
-		</div>
-		{% endif %}
-	</div>
+  <div style="display: grid; row-gap: 16px;">
+    <div>
+      同学您好！这是本次作业批改情况，若有疑问请私聊助教 😉
+    </div>
+    {% if main_score %}
+    <div>
+      <b>{{ main_score }}</b>
+    </div>
+    {% endif %}
+    <div>
+      <table border="1" cellspacing="0" cellpadding="4px">
+        <thead>
+          <tr>
+            {% for k in scores.keys() %}
+            <th align="center">{{ k }}</th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            {% for v in scores.values() %}
+            <td align="center">{{ v }}</td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div>
+      {{ remarks }}
+    </div>
+    {% if attach %}
+    <div>
+      附件包含具体批注，请查收 😊
+    </div>
+    {% endif %}
+    <div>
+      <div><b>代码文件差异</b></div>
+      {% for item in diff %}
+      <div style="margin: 8px; padding: 8px; border: 1px solid gray; border-radius: 4px">
+        <pre>{{ item }}</pre>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
 </body>
 
 </html>

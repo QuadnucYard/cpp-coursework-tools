@@ -4,7 +4,7 @@ from email.mime.text import MIMEText
 from email.utils import formataddr
 from pathlib import Path
 from smtplib import SMTP_SSL
-from typing import Any, Iterable
+from typing import Any, Iterable, Self
 
 from pydantic_settings import BaseSettings
 
@@ -27,19 +27,19 @@ class EmailSender:
         self.message["From"] = formataddr(pair=(settings.SENDER_NAME, settings.SENDER))
         self.smtp = smtp
 
-    def subject(self, title: str):
+    def subject(self, title: str) -> Self:
         self.message["Subject"] = Header(title, "utf-8")
         return self
 
-    def content(self, content: str):
+    def content(self, content: str) -> Self:
         self.message.attach(MIMEText(content, "plain", "utf-8"))
         return self
 
-    def html(self, content: str):
+    def html(self, content: str) -> Self:
         self.message.attach(MIMEText(content, "html", "utf-8"))
         return self
 
-    def attach(self, path_: Any, rename: str | None = None):
+    def attach(self, path_: Any, rename: str | None = None) -> Self:
         path = Path(path_)
         att = MIMEText(path.read_bytes(), "base64", "utf-8")  # type: ignore
         att.set_type("application/octet-stream")
@@ -47,11 +47,11 @@ class EmailSender:
         self.message.attach(att)
         return self
 
-    def attach_many(self, paths: Iterable[Any]):
+    def attach_many(self, paths: Iterable[Any]) -> None:
         for path in paths:
             self.attach(path)
 
-    def send(self, *receivers: str):
+    def send(self, *receivers: str) -> None:
         self.message["To"] = ",".join(receivers)
         try:
             err = self.smtp.sendmail(settings.SMTP_USER, receivers, self.message.as_string())
@@ -72,11 +72,11 @@ class Emailer:
     def launch(self) -> EmailSender:
         return EmailSender(self.smtp)
 
-    def close(self):
+    def close(self) -> None:
         self.smtp.quit()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.close()
