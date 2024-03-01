@@ -12,6 +12,10 @@ class TestResult:
     def __str__(self) -> str:
         return f"{self.__class__.__name__}: {self.msg}"
 
+    @property
+    def status(self) -> str:
+        return self.__class__.__name__
+
 
 class UnexpectedResult(TestResult, BaseException): ...
 

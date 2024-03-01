@@ -16,3 +16,8 @@ def colored(s: str, *, fg: str | None = None, bg: str | None = None, sty: str | 
     if sty:
         s = f"{sty}{s}{Style.RESET_ALL}"
     return s
+
+
+def trunc_lines(s: str, limit: int, ell: str = "...") -> str:
+    lines = s.splitlines()
+    return s if len(lines) <= limit else "\n".join(lines[:limit]) + "\n" + ell
