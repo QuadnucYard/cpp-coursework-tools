@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from io import FileIO
 from os import PathLike
@@ -10,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from colorama import Fore, Style
-from dataclasses_json import DataClassJsonMixin, dataclass_json
+from dataclasses_json import DataClassJsonMixin
 
 from . import result
 from .finder import FindSubmissionByKeywords
@@ -43,13 +44,17 @@ class Tester:
         self.testcases.sort(key=lambda x: int(x.stem.split("-")[-1]))
         self.testcases_str = [f.read_text() for f in self.testcases]
         self.testans_str = [f.with_suffix(".ans").read_text() for f in self.testcases]
+        if not self.testcases:
+            print(colored("WARN: no test case found!", fg=Fore.RED))
 
         self.tmp_path = Path("tmp")
         self.checker = checker
         self.finder = FindSubmissionByKeywords([prefix])
 
         self.output_trunc = 20
+        self.time_limit = 1.0
         self.tle_as_ac = False
+        self.tle_handler: Callable[[str, str], result.TestResult | None] | None = None
 
     def find_submission(self, folder: Path) -> Path | None:
         return self.finder.find_submission(folder)
@@ -59,17 +64,19 @@ class Tester:
         print(colored(f"Compile: {source}", fg=Fore.YELLOW))
         r = subprocess.call(
             [
-                "g++",
-                # "clang++",
+                # "g++",
+                "clang++",
                 source,
                 "-o",
                 output_path,
                 "-std=c++20",
                 "-Wall",
                 "-Wextra",
+                "-Waddress",
                 # "-g",
-                # "-fsanitize=address",
-                # "-fno-omit-frame-pointer",
+                "-fsanitize=address",
+                "-fsanitize=undefined",
+                "-fno-omit-frame-pointer",
             ],
             stdout=sys.stdout,
             stderr=sys.stderr,
@@ -82,7 +89,7 @@ class Tester:
         try:
             p = subprocess.Popen(exe, stdin=FileIO(tc), stdout=subprocess.PIPE)
             try:
-                stdout, stderr = p.communicate(timeout=1)
+                stdout, stderr = p.communicate(timeout=self.time_limit)
             except subprocess.TimeoutExpired as e:
                 p.kill()
                 outs, errs = p.communicate()
@@ -130,15 +137,19 @@ class Tester:
                         results.append(ee)
                         log.result.append(TestCaseLog(out, ee.status, ee.msg))
                     else:
-                        results.append(e)
-                        log.result.append(TestCaseLog(out, e.status, e.msg))
+                        e4: result.TestResult = e
+                        if self.tle_handler and isinstance(e, result.TLE):
+                            eee = self.tle_handler(self.testcases_str[i], self.testans_str[i])
+                            e4 = eee or e
+                        results.append(e4)
+                        log.result.append(TestCaseLog(out, e4.status, e4.msg))
                 print("  ", colored(str(results[-1]), fg=results[-1].color), sep="")
             exe.unlink()
             return log
         except result.UnexpectedResult as e:
             log.status = e.status
             log.message = e.msg
-            print(e)
+            print(colored(str(e), fg=e.color))
             return log
 
     def test_many(self, folder: Path, save_path: Path | None = None) -> list[TestLog]:
