@@ -1,3 +1,4 @@
+import re
 import shutil
 import zipfile
 from pathlib import Path
@@ -21,8 +22,13 @@ def zip_dir(dirpath: Path, outFullName: Path) -> None:
             zip.write(fpath, fpath)
 
 
+exclude_patterns = [re.compile(s) for s in [r"^~", r"^\.", r"^__", r"x64", r"\.sln", r"\.vcxproj"]]
+ignore_patterns = shutil.ignore_patterns("~*", ".*", "__*", ".vs", "x32", "x64", "*.sln", "*.vcxproj*")
+
+
 def should_include(f: Path) -> bool:
-    return not (f.name.startswith("~") or f.name.startswith(".") or f.name.startswith("__"))
+    name = f.name
+    return not (any(p.search(name) for p in exclude_patterns))
 
 
 def try_decode(str: str) -> str:
@@ -82,9 +88,7 @@ def auto_extract(file: Path, dest: Path) -> None:
             cur = f
         else:
             break
-    for f in cur.iterdir():
-        if should_include(f):
-            shutil.move(f, dest / f.name)
+    shutil.copytree(cur, dest, ignore=ignore_patterns, dirs_exist_ok=True)
 
     file.unlink()
     shutil.rmtree(temp_path)
@@ -94,6 +98,7 @@ def extract_archive(src_path: Path, dest_name: str, roster_path: Path, gather: b
     roster = pd.read_table(roster_path)
 
     dest_path = Path(".") / "collect" / dest_name
+    shutil.rmtree(dest_path, ignore_errors=True)  # 强行删除原有目录
     dest_path.mkdir(parents=True, exist_ok=True)
 
     name_dict = dict[str, Path]()
@@ -124,10 +129,12 @@ def extract_archive(src_path: Path, dest_name: str, roster_path: Path, gather: b
             attach.rmdir()
 
     # 把 collect 内容复制到对应的 eval 下
+    print("Copy to eval")
     shutil.copytree(dest_path, Path(".") / "eval" / dest_name)
 
     # 代码汇总
     if gather:
+        print("Gather source codes")
         gather_codes(dest_path)
 
     # 暂不支持自动分包
