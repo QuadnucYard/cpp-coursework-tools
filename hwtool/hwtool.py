@@ -22,8 +22,8 @@ def gather(path: str) -> None:
 
 
 @app.command()
-def mail(folder: str, subject: str, preview: bool = False, send_self: bool = False) -> None:
-    send_emails(folder, subject, preview=preview, send_self=send_self)
+def mail(folder: str, subject: str, preview: bool = False, send_self: bool = False, qq_only: bool = False) -> None:
+    send_emails(folder, subject, preview=preview, send_self=send_self, qq_only=qq_only)
 
 
 @app.command()

@@ -44,7 +44,7 @@ def get_single_differences(fa: Path, fb: Path) -> list[str]:
     # return diff_groups
 
 
-source_suffixes = (".cpp", ".cc", ".h", ".hpp")
+source_suffixes = (".cpp", ".cc", ".h", ".hpp", ".txt", ".md")
 
 
 def get_all_differences(source: Path, base: Path) -> dict[Path, list[str]]:
