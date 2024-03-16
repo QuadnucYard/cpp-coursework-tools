@@ -72,10 +72,10 @@ class Tester:
                 "-std=c++20",
                 "-Wall",
                 "-Wextra",
-                "-Waddress",
+                # "-Wpedantic",
+                "-Wconversion",
                 # "-g",
-                "-fsanitize=address",
-                "-fsanitize=undefined",
+                "-fsanitize=address,undefined",
                 "-fno-omit-frame-pointer",
             ],
             stdout=sys.stdout,
@@ -103,7 +103,8 @@ class Tester:
 
     def check(self, out: str, ans: str) -> None: ...
 
-    def test_one(self, folder: Path) -> TestLog:
+    def test_one(self, folder_: Path | str) -> TestLog:
+        folder = Path(folder_)
         log = TestLog(folder.name)
         print(colored(f"Test {folder}", fg=Fore.MAGENTA, sty=Style.BRIGHT))
         try:
@@ -152,7 +153,8 @@ class Tester:
             print(colored(str(e), fg=e.color))
             return log
 
-    def test_many(self, folder: Path, save_path: Path | None = None) -> list[TestLog]:
+    def test_many(self, folder_: Path | str, save_path: Path | None = None) -> list[TestLog]:
+        folder = Path(folder_)
         if save_path:
             save_path.parent.mkdir(parents=True, exist_ok=True)
         logs: list[TestLog] = []
