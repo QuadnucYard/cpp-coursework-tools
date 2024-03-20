@@ -3,10 +3,9 @@ from pathlib import Path
 import typer
 from typing_extensions import Annotated
 
-from scripts.mail.mail import send_emails
-
 from .extract.extract import extract_archive
 from .extract.gather_code import gather_codes
+from .mail.mail import send_emails
 
 app = typer.Typer()
 
