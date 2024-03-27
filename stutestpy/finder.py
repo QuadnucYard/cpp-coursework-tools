@@ -18,6 +18,6 @@ class FindSubmissionByKeywords(SubmissionFinder):
     def find_submission(self, folder: Path) -> Path | None:
         for k in self.keywords:
             for f in folder.glob("**/*.cpp"):
-                if f.suffix == ".cpp" and k in f.name:
+                if f.is_file() and f.suffix == ".cpp" and k in f.name:
                     return f
         return None
