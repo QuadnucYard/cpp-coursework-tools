@@ -50,6 +50,10 @@ class TLE(UnexpectedResult):
 class CE(UnexpectedResult):
     color = Fore.YELLOW
 
+    def __init__(self, msg: str = "Compilation Error", details: str = "") -> None:
+        super().__init__(msg)
+        self.details = details
+
 
 class UKE(UnexpectedResult):
     color = Fore.BLUE

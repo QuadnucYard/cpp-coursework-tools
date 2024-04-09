@@ -68,8 +68,11 @@ class LineSequenceMatcher(SequenceMatcher):
     """行序列匹配"""
 
     @override
-    def __init__(self, ans: str) -> None:
-        self.matchers = [(l, re.compile(re.sub(r"(\\ |\\t)+", r"\\s*", re.escape(l)))) for l in ans.splitlines()]
+    def __init__(self, ans: str, *, ignore_spaces: bool = True) -> None:
+        self.matchers = [
+            (l, re.compile(re.sub(r"(\\ |\\t)+", r"\\s*", re.escape(l)) if ignore_spaces else re.escape(l)))
+            for l in ans.splitlines()
+        ]
 
     @override
     def __call__(self, output: str) -> Match:

@@ -62,27 +62,28 @@ class Tester:
     def compile(self, source: PathLike) -> Path:  # type: ignore
         output_path = self.tmp_path / "out.exe"
         print(colored(f"Compile: {source}", fg=Fore.YELLOW))
-        r = subprocess.call(
+        r = subprocess.run(
             [
                 # "g++",
                 "clang++",
                 source,
                 "-o",
                 output_path,
-                "-std=c++20",
+                "-std=c++23",
                 "-Wall",
                 "-Wextra",
                 # "-Wpedantic",
-                "-Wconversion",
-                # "-g",
+                # "-Wconversion",
+                "-g",
                 "-fsanitize=address,undefined",
                 "-fno-omit-frame-pointer",
             ],
             stdout=sys.stdout,
             stderr=sys.stderr,
+            # capture_output=True,
         )
-        if r != 0:
-            raise result.CE
+        if r.returncode != 0:
+            raise result.CE()
         return output_path
 
     def run(self, tc: Path, exe: Path) -> str:
@@ -151,6 +152,7 @@ class Tester:
             log.status = e.status
             log.message = e.msg
             print(colored(str(e), fg=e.color))
+            input()
             return log
 
     def test_many(self, folder_: Path | str, save_path: Path | None = None) -> list[TestLog]:

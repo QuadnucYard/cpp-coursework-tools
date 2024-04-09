@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Callable, Type
+from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from colorama import Fore
 
@@ -22,18 +23,27 @@ class Checker:
 
 
 class SequenceMatchChecker(Checker):
-    def __init__(self, matcher_cls: Type[SequenceMatcher], default_judge: bool = False) -> None:
+
+    def __init__(
+        self,
+        matcher_cls: type[SequenceMatcher],
+        default_judge: bool = False,
+        **matcher_args,
+    ) -> None:
         self.matcher_cls = matcher_cls
+        self.matcher_args = matcher_args
         self.default_judge = default_judge
         self.fallback_fun: Callable[[str, str, str], result.TestResult | None] | None = None
 
     def check(self, tester: Tester, index: int, input_: str, output: str, ans: str) -> result.TestResult:
-        matcher = self.matcher_cls(ans)
+        matcher = self.matcher_cls(ans, **self.matcher_args)
         try:
             m = matcher(output)
             if m.ok:
+                print(colored("stdout: ", fg=Fore.BLUE))
+                print(m.match_str)
                 return result.AC()
-            # fallbacck
+            # fallback
             if self.fallback_fun:
                 fb = self.fallback_fun(input_, output, ans)
                 if fb:
