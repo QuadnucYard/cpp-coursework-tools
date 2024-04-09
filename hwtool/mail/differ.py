@@ -5,8 +5,8 @@ from pathlib import Path
 
 
 def get_different_pairs(source: Path, base: Path) -> Iterable[tuple[Path, Path]]:
-    base_files = {f.relative_to(base): f for f in base.glob("*.*")}
-    for f in source.glob("*.*"):
+    base_files = {f.relative_to(base): f for f in base.rglob("*.*")}
+    for f in source.rglob("*.*"):
         if not f.is_file():
             continue
         f_rel = f.relative_to(source)
@@ -20,9 +20,12 @@ def get_different_files(source: Path, base: Path) -> Iterable[Path]:
 
 def auto_decode(bytes: bytes) -> str:
     try:
-        return bytes.decode()
+        return bytes.decode("utf-8")
     except Exception as _:
-        return bytes.decode("gbk")
+        try:
+            return bytes.decode("gbk")
+        except Exception as _:
+            return bytes.decode("utf-16")
 
 
 def get_file_lines(f: Path) -> list[str]:
