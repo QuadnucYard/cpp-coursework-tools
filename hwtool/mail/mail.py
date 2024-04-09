@@ -2,18 +2,20 @@ import html
 from pathlib import Path
 
 import pandas as pd
+import premailer
 from jinja2 import Template
 from markdown import markdown
 from rich.console import Console
 
 from .differ import get_all_differences, get_different_files
 from .emailer import Emailer, settings
+from .tinter import tint_raw_block
 
 console = Console()
 
 email_template = Template((Path(__file__).parent / "email_template.jinja").read_text(encoding="utf-8"))
 
-roster = pd.read_table((Path(__file__).parents[1] / "data" / "roster-2.tsv"))
+roster = pd.read_table(Path(__file__).parents[1] / "data" / "roster-2.tsv")
 
 
 def send_emails(
@@ -57,9 +59,10 @@ def send_emails(
                 main_score=main_score,
                 scores=row[i1:i2].to_dict(),
                 remarks=markdown(str(row["评语"]).replace("\n", "  \n")),
-                diff=[html.escape("\n".join(a)) for a in diff.values()],
+                diff=[tint_raw_block(html.escape("\n".join(a))) for a in diff.values()],
                 attach=len(att) > 0,
             )
+            content = premailer.transform(content)  # css处理
             (log_path / f"{idx:02}-{row['学号']}.html").write_text(content, "utf-8")
             # 调试输出
             console.print(f"[yellow]{idx} [blue]{folder_name}", end=" ")

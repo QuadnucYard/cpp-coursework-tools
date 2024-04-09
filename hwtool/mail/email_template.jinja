@@ -11,7 +11,7 @@
     </div>
     {% endif %}
     <div>
-      <table border="1" cellspacing="0" cellpadding="4px">
+      <table border="1" cellspacing="0" class="score-table">
         <thead>
           <tr>
             {% for k in scores.keys() %}
@@ -39,12 +39,55 @@
     <div>
       <div><b>代码文件差异</b></div>
       {% for item in diff %}
-      <div style="margin: 8px; padding: 8px; border: 1px solid gray; border-radius: 4px">
+      <div class="code-block">
         <pre>{{ item }}</pre>
       </div>
       {% endfor %}
     </div>
   </div>
 </body>
+
+<style>
+  .score-table th,
+  .score-table td {
+    padding: 4px;
+  }
+
+  .code-block {
+    background-color: #f6f8fa;
+    margin: 8px;
+    padding: 8px;
+    border: 1px solid gray;
+    border-radius: 4px;
+  }
+
+  .line-loc {
+    color: #636c76;
+    background-color: #ddf4ff;
+  }
+
+  .line-add {
+    background-color: #dafbe1;
+  }
+
+  .line-del {
+    background-color: #ffebe9;
+  }
+
+  .cmt-alert {
+    color: orangered;
+    font-weight: bold;
+  }
+
+  .cmt-query {
+    color: dodgerblue;
+    font-weight: bolder;
+  }
+
+  .cmt-emph {
+    color: limegreen;
+    font-weight: bolder;
+  }
+</style>
 
 </html>

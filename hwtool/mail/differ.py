@@ -58,5 +58,9 @@ source_suffixes = (".cpp", ".cc", ".h", ".hpp", ".txt", ".md")
 
 def get_all_differences(source: Path, base: Path) -> dict[Path, list[str]]:
     return {
-        a: get_single_differences(b, a) for a, b in get_different_pairs(source, base) if a.suffix in source_suffixes
+        k: v
+        for k, v in {
+            a: get_single_differences(b, a) for a, b in get_different_pairs(source, base) if a.suffix in source_suffixes
+        }.items()
+        if v
     }
