@@ -57,7 +57,7 @@ def send_emails(
             # 设置内容
             content = email_template.render(
                 main_score=main_score,
-                scores=row[i1:i2].to_dict(),
+                scores={k: f"{v:.1f}" for k, v in row[i1:i2].to_dict().items()},
                 remarks=markdown(str(row["评语"]).replace("\n", "  \n")),
                 diff=[tint_raw_block(html.escape("\n".join(a))) for a in diff.values()],
                 attach=len(att) > 0,
