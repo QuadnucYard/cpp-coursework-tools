@@ -94,7 +94,15 @@ def auto_extract(file: Path, dest: Path) -> None:
     shutil.rmtree(temp_path)
 
 
-def extract_archive(src_path: Path, dest_name: str, roster_path: Path, gather: bool = False) -> None:
+def remove_name_prefix(file_name: str, names: list[str]) -> str:
+    for n in names:
+        file_name = file_name.removeprefix(n + "_")
+    return file_name
+
+
+def extract_archive(
+    src_path: Path, dest_name: str, roster_path: Path, *, gather: bool = False, remove_existent: bool = True
+) -> None:
     roster = pd.read_table(roster_path)
 
     dest_path = Path(".") / "collect" / dest_name
@@ -106,6 +114,7 @@ def extract_archive(src_path: Path, dest_name: str, roster_path: Path, gather: b
         one_path = dest_path / f"{row['学号']}{row['姓名']}"
         one_path.mkdir(exist_ok=True)
         name_dict[row["姓名"]] = one_path
+    names = list(name_dict.keys())
 
     with support_gbk(zipfile.ZipFile(src_path)) as z:
         print(f"Extracting {src_path}...")
@@ -125,12 +134,19 @@ def extract_archive(src_path: Path, dest_name: str, roster_path: Path, gather: b
                 if f.is_file() and f.suffix in extractors:
                     auto_extract(f, p)
                 elif should_include(f):
-                    shutil.move(f, p / f.name)
+                    shutil.move(f, p / remove_name_prefix(f.name, names))
             attach.rmdir()
 
     # 把 collect 内容复制到对应的 eval 下
     print("Copy to eval")
-    shutil.copytree(dest_path, Path(".") / "eval" / dest_name)
+    eval_dir = Path(".") / "eval" / dest_name
+    if eval_dir.exists():
+        if remove_existent:
+            shutil.rmtree(eval_dir)
+            print("Remove existent eval dir")
+        else:
+            print("Overwrite existent eval dir")
+    shutil.copytree(dest_path, eval_dir, dirs_exist_ok=True)
 
     # 代码汇总
     if gather:
