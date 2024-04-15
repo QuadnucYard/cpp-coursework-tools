@@ -21,6 +21,7 @@ dependencies = [
     "typing-extensions<5.0.0,>=4.10.0",
     "rich<14.0.0,>=13.7.1",
     "premailer>=3.10.0",
+    "chardet>=5.2.0",
 ]
 
 [build-system]

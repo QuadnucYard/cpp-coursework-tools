@@ -3,6 +3,8 @@ import filecmp
 from collections.abc import Iterable
 from pathlib import Path
 
+import chardet
+
 
 def get_different_pairs(source: Path, base: Path) -> Iterable[tuple[Path, Path]]:
     base_files = {f.relative_to(base): f for f in base.rglob("*.*")}
@@ -19,13 +21,14 @@ def get_different_files(source: Path, base: Path) -> Iterable[Path]:
 
 
 def auto_decode(bytes: bytes) -> str:
-    try:
-        return bytes.decode("utf-8")
-    except Exception as _:
+    enc = chardet.detect(bytes)
+    if enc["encoding"]:
         try:
-            return bytes.decode("gbk")
-        except Exception as _:
-            return bytes.decode("utf-16")
+            return bytes.decode(enc["encoding"])
+        except UnicodeDecodeError as e:
+            return bytes[: e.start].decode(enc["encoding"])
+    print("Unknown encoding")
+    return ""
 
 
 def get_file_lines(f: Path) -> list[str]:
