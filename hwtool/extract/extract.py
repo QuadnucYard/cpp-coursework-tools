@@ -156,3 +156,19 @@ def extract_archive(
     # 暂不支持自动分包
 
     print("Done!")
+
+
+def update_eval(proj_name: str):
+    collect_folder = Path(".") / "collect" / proj_name
+    eval_folder = Path(".") / "eval" / proj_name
+
+    for f in collect_folder.rglob("*/*"):
+        if not f.is_file():
+            continue
+        f_cmp = eval_folder / f.relative_to(collect_folder)
+        # 如果文件已存在且修改时间不比collect里的早，那么跳过
+        if f_cmp.exists() and f.stat().st_mtime_ns <= f_cmp.stat().st_mtime_ns:
+            continue
+        print("update", f_cmp, f.stat().st_mtime, f_cmp.stat().st_mtime if f_cmp.exists() else "")
+        f_cmp.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(f, f_cmp)
