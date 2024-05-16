@@ -1,7 +1,5 @@
 from typing import ClassVar
 
-from colorama import Fore
-
 
 class TestResult:
     color: ClassVar[str | None] = None
@@ -10,7 +8,7 @@ class TestResult:
         self.msg = msg
 
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}: {self.msg}"
+        return f"{self.status}: {self.msg}"
 
     @property
     def status(self) -> str:
@@ -21,34 +19,34 @@ class UnexpectedResult(TestResult, BaseException): ...
 
 
 class AC(TestResult):
-    color = Fore.GREEN
+    color = "green"
 
     def __init__(self, msg: str = "Accepted") -> None:
         super().__init__(msg)
 
 
 class WA(TestResult):
-    color = Fore.RED
+    color = "red"
 
 
 class MISS(UnexpectedResult):
-    color = Fore.RED
+    color = "red"
 
 
 class PE(UnexpectedResult):
-    color = Fore.RED
+    color = "red"
 
 
 class RE(UnexpectedResult):
-    color = Fore.MAGENTA
+    color = "magenta"
 
 
 class TLE(UnexpectedResult):
-    color = Fore.CYAN
+    color = "cyan"
 
 
 class CE(UnexpectedResult):
-    color = Fore.YELLOW
+    color = "rgb(255,165,0)"
 
     def __init__(self, msg: str = "Compilation Error", details: str = "") -> None:
         super().__init__(msg)
@@ -56,8 +54,8 @@ class CE(UnexpectedResult):
 
 
 class UKE(UnexpectedResult):
-    color = Fore.BLUE
+    color = "rgb(123,104,238)"
 
 
 class INT(UnexpectedResult):
-    color = Fore.BLUE
+    color = "blue"

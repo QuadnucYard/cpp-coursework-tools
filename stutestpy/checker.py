@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+import traceback
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeAlias
 
-from colorama import Fore
+import rich
 
-from . import result
-from .utils import colored
+from . import results as R
 
 if TYPE_CHECKING:
     from .matcher import SequenceMatcher
-    from .tester import Tester
+
+console = rich.get_console()
+console._highlight = False
+
+CheckerResult: TypeAlias = R.AC | R.WA | R.PE | R.INT
 
 
 class Checker:
@@ -19,11 +23,10 @@ class Checker:
         pass
 
     @abstractmethod
-    def check(self, tester: Tester, index: int, input: str, output: str, ans: str) -> result.TestResult: ...
+    def check(self, index: int, stdin: str, stdout: str, ans: str) -> CheckerResult: ...
 
 
 class SequenceMatchChecker(Checker):
-
     def __init__(
         self,
         matcher_cls: type[SequenceMatcher],
@@ -33,32 +36,33 @@ class SequenceMatchChecker(Checker):
         self.matcher_cls = matcher_cls
         self.matcher_args = matcher_args
         self.default_judge = default_judge
-        self.fallback_fun: Callable[[str, str, str], result.TestResult | None] | None = None
+        self.fallback_fun: Callable[[str, str, str], CheckerResult | None] | None = None
 
-    def check(self, tester: Tester, index: int, input_: str, output: str, ans: str) -> result.TestResult:
+    def check(self, index: int, stdin: str, stdout: str, ans: str) -> CheckerResult:
         matcher = self.matcher_cls(ans, **self.matcher_args)
         try:
-            m = matcher(output)
+            m = matcher(stdout)
             if m.ok:
-                print(colored("stdout: ", fg=Fore.BLUE))
-                print(m.match_str)
-                return result.AC()
+                console.print("stdout: ", style="blue")
+                console.print(m.match_str)
+                return R.AC()
             # fallback
             if self.fallback_fun:
-                fb = self.fallback_fun(input_, output, ans)
+                fb = self.fallback_fun(stdin, stdout, ans)
                 if fb:
                     return fb
             # 无法自动识别
-            print(colored(f"Matched: {len(m.matched)}/{matcher.num_patterns}", fg=Fore.RED))
-            print(colored("stdout: ", fg=Fore.BLUE))
-            print(m.match_str)
-            judge = input(colored(f"Manual judge #{index} (yes=AC): ", fg=Fore.CYAN)).lower()
+            console.print(f"Matched: {len(m.matched)}/{matcher.num_patterns}", style="red")
+            console.print("stdout: ", style="blue")
+            console.print(m.match_str, highlight=False, markup=False)
+            console.print(f"Manual judge #{index} (yes=AC): ", end="", style="cyan")
+            judge = console.input().lower()
             if judge in ("int", "i"):
-                raise result.INT
+                return R.INT()
             if self.default_judge:
                 j = judge not in ("no", "n", "f")
             else:
                 j = judge in ("yes", "y", "t")
-            return result.AC() if j else result.WA()
+            return R.AC() if j else R.WA()
         except Exception as _:
-            raise result.PE from None
+            return R.PE(traceback.format_exc())
