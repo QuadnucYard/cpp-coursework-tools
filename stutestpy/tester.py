@@ -116,6 +116,8 @@ class Tester:
                 console.print(e, style=e.color)
                 console.input("Press any key to continue...")
 
+        self.worktree.finish()
+
         return log
 
     def test_many(self, folder_: Path | str, save_path: Path | None = None) -> list[TestLog]:
