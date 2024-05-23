@@ -4,6 +4,7 @@ import subprocess
 import sys
 from abc import abstractmethod
 from pathlib import Path
+from typing import override
 
 import rich
 from more_itertools import flatten
@@ -20,7 +21,7 @@ class Compiler:
 
 
 class LocalCompiler(Compiler):
-
+    @override
     def compile(self, sources: list[Path], dest: Path, *, includes: list[Path] | None = None) -> Result[Path, R.CE]:
         console.print(f"Compile: {sources}", style="yellow")
         r = subprocess.run(

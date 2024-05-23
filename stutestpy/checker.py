@@ -3,7 +3,7 @@ from __future__ import annotations
 import traceback
 from abc import abstractmethod
 from collections.abc import Callable
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, override
 
 import rich
 
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 console = rich.get_console()
 console._highlight = False
 
-CheckerResult: TypeAlias = R.AC | R.WA | R.PE | R.INT
+type CheckerResult = R.AC | R.WA | R.PE | R.INT
 
 
 class Checker:
@@ -38,6 +38,7 @@ class SequenceMatchChecker(Checker):
         self.default_judge = default_judge
         self.fallback_fun: Callable[[str, str, str], CheckerResult | None] | None = None
 
+    @override
     def check(self, index: int, stdin: str, stdout: str, ans: str) -> CheckerResult:
         matcher = self.matcher_cls(ans, **self.matcher_args)
         try:

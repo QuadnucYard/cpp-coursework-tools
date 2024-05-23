@@ -3,7 +3,7 @@ from __future__ import annotations
 import shutil
 from abc import abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeAlias
+from typing import TYPE_CHECKING, override
 
 from result import Result
 
@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from .compiler import Compiler
     from .finder import SubmissionFinder
 
-StrPath: TypeAlias = str | Path
+type StrPath = str | Path
 
 
 class TreeLoader:
@@ -27,6 +27,7 @@ class FixedLoader(TreeLoader):
     def __init__(self, loaders: list[SubmissionFinder] | None = None) -> None:
         self.loaders = loaders or []
 
+    @override
     def load_to(self, worktree: WorkTree) -> bool:
         for loader in self.loaders:
             sub = loader.find_submission(worktree.root)
@@ -45,6 +46,7 @@ class ConditionalLoader(TreeLoader):
 
         self.extras: list[Path] = []
 
+    @override
     def load_to(self, worktree: WorkTree) -> bool:
         if (f := worktree.root / self.cond_main).exists():
             worktree.add_file(f)
@@ -58,6 +60,7 @@ class ConditionalLoader(TreeLoader):
             return False
         return True
 
+    @override
     def unload(self, worktree: WorkTree) -> None:
         # for f in self.extras:
         #     f.unlink(missing_ok=True)

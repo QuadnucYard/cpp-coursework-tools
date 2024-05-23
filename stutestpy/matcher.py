@@ -1,9 +1,9 @@
 import re
 from abc import abstractmethod
 from dataclasses import dataclass
+from typing import override
 
 from colorama import Fore
-from typing_extensions import override
 
 from .utils import colored
 

@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from pathlib import Path
-
-from typing_extensions import override
+from typing import override
 
 
 class SubmissionFinder:
