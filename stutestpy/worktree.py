@@ -49,7 +49,9 @@ class ConditionalLoader(TreeLoader):
         if (f := worktree.root / self.cond_main).exists():
             worktree.add_file(f)
         elif all((worktree.root / a).exists() for a in self.alt_requires):
-            copied = shutil.copyfile(self.alt, worktree.root / self.alt.name)
+            copied = worktree.root / self.alt.name
+            copied = copied.with_stem(copied.stem + "-cp")
+            copied = shutil.copyfile(self.alt, copied)
             worktree.add_file(copied)
             self.extras.append(copied)
         else:
