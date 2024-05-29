@@ -37,6 +37,22 @@ class FixedLoader(TreeLoader):
         return True
 
 
+class EnsuredLoader(TreeLoader):
+    def __init__(self, ensures: list[tuple[str, StrPath]] | None = None) -> None:
+        self.ensures = ensures or []
+
+    @override
+    def load_to(self, worktree: WorkTree) -> bool:
+        for name, alt in self.ensures:
+            f = worktree.root / name
+            if not f.exists():
+                if f.suffix not in (".h", ".hpp"):
+                    f = f.with_stem(f.stem + "-cp")
+                shutil.copyfile(alt, f)
+            worktree.add_file(f)
+        return True
+
+
 class ConditionalLoader(TreeLoader):
     def __init__(self, cond_main: str, alt: StrPath, alt_requires: list[str] | None = None) -> None:
         # 暂时只支持单个文件

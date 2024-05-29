@@ -18,7 +18,7 @@ class FindSubmissionByKeywords(SubmissionFinder):
         # 按照关键词顺序匹配
         for k in self.keywords:
             for f in folder.glob("**/*.cpp"):
-                if f.is_file() and f.suffix == ".cpp" and k in f.name:
+                if f.is_file() and f.suffix == ".cpp" and k in f.name.lower():
                     return f
         return None
 

@@ -6,4 +6,4 @@ from .matcher import LineSequenceMatcher, SequenceMatcher, TokenSequenceMatcher
 from .results import TestResult
 from .runner import TestRunner
 from .tester import Tester
-from .worktree import ConditionalLoader, FixedLoader, WorkTree
+from .worktree import ConditionalLoader, EnsuredLoader, FixedLoader, WorkTree
