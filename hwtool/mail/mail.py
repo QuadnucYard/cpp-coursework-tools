@@ -38,6 +38,10 @@ def send_emails(
 
     with Emailer() as emailer:
         for idx, row in df.iterrows():
+            # 跳过没有分数的
+            if row["分数"] == 0.0:
+                continue
+
             folder_name = f"{row['学号']}{row['姓名']}"
             if qq_only:
                 qq = roster[roster["学号"] == row["学号"]].iloc[0]["qq"]
