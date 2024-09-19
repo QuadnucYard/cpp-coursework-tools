@@ -40,7 +40,6 @@ class TestLog(DataClassJsonMixin):
 
 
 class Tester:
-
     def __init__(
         self, worktree: WorkTree, testcases: TestCases, compiler: Compiler, runner: TestRunner, checker: Checker
     ) -> None:

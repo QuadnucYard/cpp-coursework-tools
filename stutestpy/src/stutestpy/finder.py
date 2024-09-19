@@ -9,7 +9,6 @@ class SubmissionFinder:
 
 
 class FindSubmissionByKeywords(SubmissionFinder):
-
     def __init__(self, keywords: list[str]) -> None:
         self.keywords = keywords
 
@@ -24,7 +23,6 @@ class FindSubmissionByKeywords(SubmissionFinder):
 
 
 class FindHeader(SubmissionFinder):
-
     def __init__(self, header: str) -> None:
         self.header = header
 

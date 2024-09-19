@@ -1,10 +1,11 @@
+from collections.abc import Iterable
 from email.header import Header
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
 from pathlib import Path
 from smtplib import SMTP_SSL
-from typing import Any, Iterable, Self
+from typing import Any, Self
 
 from pydantic_settings import BaseSettings
 
