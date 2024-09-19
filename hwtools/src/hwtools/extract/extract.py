@@ -77,7 +77,7 @@ def auto_extract(file: Path, dest: Path) -> None:
     shutil.rmtree(temp_path, ignore_errors=True)
     temp_path.mkdir()
 
-    if extractor := extractors.get(file.suffix, None):
+    if extractor := extractors.get(file.suffix):
         extractor(file, temp_path)
 
     # move files from inner

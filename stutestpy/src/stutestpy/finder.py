@@ -30,6 +30,4 @@ class FindHeader(SubmissionFinder):
     def find_submission(self, folder: Path) -> Path | None:
         # 严格匹配头文件名
         f = folder / self.header
-        if f.exists() and f.is_file():
-            return f
-        return None
+        return f if f.is_file() else None
