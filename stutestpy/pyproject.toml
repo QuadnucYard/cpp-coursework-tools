@@ -1,0 +1,30 @@
+[project]
+name = "stutestpy"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "QuadnucYard", email = "2380433991@qq.com" }
+]
+dependencies = [
+    "colorama>=0.4.6",
+    "dataclasses-json>=0.6.7",
+    "more-itertools>=10.5.0",
+    "result>=0.17.0",
+    "rich>=13.8.1",
+]
+readme = "README.md"
+requires-python = ">= 3.12"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stutestpy"]
