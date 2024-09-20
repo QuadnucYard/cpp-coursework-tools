@@ -114,7 +114,7 @@ def extract_archive(
     for p in name_dict.values():
         attach = p / "attach"
         if attach.exists():
-            print(f"Processing {p}...")
+            print(f"Processing {p.relative_to(proj.collection)}...")
             for f in attach.iterdir():
                 if not try_extract(f, p) and should_include(f):
                     shutil.move(f, p / remove_name_prefix(f.name, names))
