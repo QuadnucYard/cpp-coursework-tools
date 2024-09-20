@@ -30,10 +30,10 @@ class FixedLoader(TreeLoader):
     @override
     def load_to(self, worktree: WorkTree) -> bool:
         for loader in self.loaders:
-            sub = loader.find_submission(worktree.root)
-            if not sub:
+            if sub := loader.find_submission(worktree.root):
+                worktree.add_file(sub)
+            else:
                 return False
-            worktree.add_file(sub)
         return True
 
 
@@ -47,7 +47,7 @@ class EnsuredLoader(TreeLoader):
             f = worktree.root / name
             if not f.exists():
                 if f.suffix not in (".h", ".hpp"):
-                    f = f.with_stem(f.stem + "-cp")
+                    f = f.with_stem(f"{f.stem}-cp")
                 shutil.copyfile(alt, f)
             worktree.add_file(f)
         return True
@@ -68,7 +68,7 @@ class ConditionalLoader(TreeLoader):
             worktree.add_file(f)
         elif all((worktree.root / a).exists() for a in self.alt_requires):
             copied = worktree.root / self.alt.name
-            copied = copied.with_stem(copied.stem + "-cp")
+            copied = copied.with_stem(f"{copied.stem}-cp")
             copied = shutil.copyfile(self.alt, copied)
             worktree.add_file(copied)
             self.extras.append(copied)

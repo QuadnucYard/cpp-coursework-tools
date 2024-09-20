@@ -21,22 +21,27 @@ class Compiler:
 
 
 class LocalCompiler(Compiler):
+    def __init__(self, args: list[str] | None = None) -> None:
+        super().__init__()
+        self.args = args or [
+            "clang++",
+            "-std=c++23",
+            "-Wall",
+            "-Wextra",
+            # "-Wpedantic",
+            # "-Wconversion",
+            "-g",
+            "-fsanitize=address,undefined",
+            "-fsanitize-address-use-after-scope",
+            "-fno-omit-frame-pointer",
+        ]
+
     @override
     def compile(self, sources: list[Path], dest: Path, *, includes: list[Path] | None = None) -> Result[Path, R.CE]:
         console.print(f"Compile: {sources}", style="yellow")
         r = subprocess.run(
             [
-                # "g++",
-                "clang++",
-                "-std=c++23",
-                "-Wall",
-                "-Wextra",
-                # "-Wpedantic",
-                # "-Wconversion",
-                "-g",
-                "-fsanitize=address,undefined",
-                "-fsanitize-address-use-after-scope",
-                "-fno-omit-frame-pointer",
+                *self.args,
                 *sources,
                 *(flatten(("-I", i) for i in includes) if includes else []),
                 "-o",
@@ -46,7 +51,4 @@ class LocalCompiler(Compiler):
             stderr=sys.stderr,
             # capture_output=True,
         )
-        if r.returncode != 0:
-            # print(auto_decode(r.stderr))
-            return Err(R.CE())
-        return Ok(Path(dest))
+        return Err(R.CE()) if r.returncode != 0 else Ok(Path(dest))

@@ -49,8 +49,7 @@ class SequenceMatchChecker(Checker):
                 return R.AC()
             # fallback
             if self.fallback_fun:
-                fb = self.fallback_fun(stdin, stdout, ans)
-                if fb:
+                if fb := self.fallback_fun(stdin, stdout, ans):
                     return fb
             # 无法自动识别
             console.print(f"Matched: {len(m.matched)}/{matcher.num_patterns}", style="red")
