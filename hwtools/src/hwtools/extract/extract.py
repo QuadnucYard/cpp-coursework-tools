@@ -4,72 +4,34 @@ import zipfile
 from pathlib import Path
 
 import pandas as pd  # type: ignore
-import py7zr
-import rarfile  # type: ignore
 
+from ..project import Project
+from .decom import extractors, support_gbk
 from .gather_code import gather_codes
-
-
-def zip_dir(dirpath: Path, outFullName: Path) -> None:
-    """
-    压缩指定文件夹
-    :param dirpath: 目标文件夹路径
-    :param outFullName: 压缩文件保存路径+xxxx.zip
-    :return: 无
-    """
-    with zipfile.ZipFile(outFullName, "w", zipfile.ZIP_DEFLATED) as zip:
-        for fpath in dirpath.glob("*"):
-            zip.write(fpath, fpath)
-
 
 exclude_patterns = [re.compile(s) for s in [r"^~", r"^\.", r"^__", r"x64", r"\.sln", r"\.vcxproj"]]
 ignore_patterns = shutil.ignore_patterns("~*", ".*", "__*", ".vs", "x32", "x64", "*.sln", "*.vcxproj*")
 
 
+def remove_name_prefix(file_name: str, names: list[str]) -> str:
+    """Remove prefixes of `file_name` in `names` together with delimiter `_`.
+
+    Args:
+        file_name (str): The original name.
+        names (list[str]): List of prefixes.
+
+    Returns:
+        str: The resulted string.
+    """
+    for n in names:
+        file_name = file_name.removeprefix(n + "_")
+    return file_name
+
+
 def should_include(f: Path) -> bool:
+    """Check whether the file can be included in the collection."""
     name = f.name
     return not (any(p.search(name) for p in exclude_patterns))
-
-
-def try_decode(str: str) -> str:
-    try:
-        string = str.encode("cp437").decode("utf-8")
-    except Exception as _:
-        string = str.encode("cp437").decode("gbk")
-    return string
-
-
-def support_gbk(zip_file: zipfile.ZipFile) -> zipfile.ZipFile:
-    name_to_info = zip_file.NameToInfo
-    # copy map first
-    for name, info in name_to_info.copy().items():
-        try:
-            real_name = try_decode(name)
-            if real_name != name:
-                info.filename = real_name
-                del name_to_info[name]
-                name_to_info[real_name] = info
-        except Exception as _:
-            ...
-    return zip_file
-
-
-def auto_extract_rar(file: Path, dest: Path) -> None:
-    with rarfile.RarFile(file) as rar:
-        rar.extractall(dest)
-
-
-def auto_extract_zip(file: Path, dest: Path) -> None:
-    with support_gbk(zipfile.ZipFile(file)) as zip:
-        zip.extractall(dest)
-
-
-def auto_extract_7z(file: Path, dest: Path) -> None:
-    with py7zr.SevenZipFile(file) as fp:
-        fp.extractall(dest)
-
-
-extractors = {".rar": auto_extract_rar, ".zip": auto_extract_zip, ".7z": auto_extract_7z}
 
 
 def auto_extract(file: Path, dest: Path) -> None:
@@ -94,30 +56,53 @@ def auto_extract(file: Path, dest: Path) -> None:
     shutil.rmtree(temp_path)
 
 
-def remove_name_prefix(file_name: str, names: list[str]) -> str:
-    for n in names:
-        file_name = file_name.removeprefix(n + "_")
-    return file_name
+def try_extract(file: Path, dest: Path) -> bool:
+    if file.is_file() and file.suffix in extractors:
+        auto_extract(file, dest)
+        return True
+    return False
 
 
 def extract_archive(
-    src_path: Path, dest_name: str, roster_path: Path, *, gather: bool = False, remove_existent: bool = True
+    archive_path: Path,
+    proj: Project,
+    *,
+    roster_path: Path,
+    gather: bool = False,
+    remove_existent: bool = True,
 ) -> None:
+    """
+    Extracts files from a specified archive and organizes them into project directories.
+
+    This function reads a roster to create directories for each student, extracts relevant files from the provided archive, and processes attachments. It also offers options to gather source codes and manage existing files in the project structure.
+
+    Args:
+        archive_path (Path): The path to the archive file to be extracted.
+        proj (Project): The project instance that contains the collection and evaluation paths.
+        roster_path (Path): The path to the roster file containing student information.
+        gather (bool, optional): If True, source codes will be gathered after extraction. Defaults to False.
+        remove_existent (bool, optional): If True, existing evaluation directories will be removed before copying. Defaults to True.
+
+    Returns:
+        None
+
+    Examples:
+        extract_archive(Path('/path/to/archive.zip'), project_instance, roster_path=Path('/path/to/roster.csv'))
+    """
+
     roster = pd.read_table(roster_path)
 
-    dest_path = Path(".") / "collect" / dest_name
-    shutil.rmtree(dest_path, ignore_errors=True)  # 强行删除原有目录
-    dest_path.mkdir(parents=True, exist_ok=True)
+    proj.init_collect()  # 创建空collect目录
 
     name_dict = dict[str, Path]()
     for _, row in roster.iterrows():
-        one_path = dest_path / f"{row['学号']}{row['姓名']}"
+        one_path = proj.collect_folder / f"{row['学号']}{row['姓名']}"
         one_path.mkdir(exist_ok=True)
         name_dict[row["姓名"]] = one_path
     names = list(name_dict.keys())
 
-    with support_gbk(zipfile.ZipFile(src_path)) as z:
-        print(f"Extracting {src_path}...")
+    with support_gbk(zipfile.ZipFile(archive_path)) as z:
+        print(f"Extracting {archive_path}...")
         nl = z.namelist()
         for n in nl:
             if n.endswith(".rtf"):
@@ -131,41 +116,44 @@ def extract_archive(
         if attach.exists():
             print(f"Processing {p}...")
             for f in attach.iterdir():
-                if f.is_file() and f.suffix in extractors:
-                    auto_extract(f, p)
-                elif should_include(f):
+                if not try_extract(f, p) and should_include(f):
                     shutil.move(f, p / remove_name_prefix(f.name, names))
             attach.rmdir()
 
     # 把 collect 内容复制到对应的 eval 下
     print("Copy to eval")
-    eval_dir = Path(".") / "eval" / dest_name
-    if eval_dir.exists():
-        if remove_existent:
-            shutil.rmtree(eval_dir)
-            print("Remove existent eval dir")
-        else:
-            print("Overwrite existent eval dir")
-    shutil.copytree(dest_path, eval_dir, dirs_exist_ok=True)
+    proj.init_eval(remove_existent=remove_existent)
 
     # 代码汇总
     if gather:
         print("Gather source codes")
-        gather_codes(dest_path)
+        gather_codes(proj.collect_folder)
 
     # 暂不支持自动分包
 
     print("Done!")
 
 
-def update_eval(proj_name: str):
-    collect_folder = Path(".") / "collect" / proj_name
-    eval_folder = Path(".") / "eval" / proj_name
+def update_eval(proj: Project):
+    """
+    Updates the evaluation files in the project based on the collected files.
 
-    for f in collect_folder.rglob("*/*"):
+    This function iterates through the collected files and checks if they need to be updated in the evaluation directory. If a file in the collection is newer than its counterpart in the evaluation folder, it copies the updated file to ensure the evaluation is current.
+
+    Args:
+        proj (Project): The project instance containing the paths to the collection and evaluation folders.
+
+    Returns:
+        None
+
+    Examples:
+        update_eval(project_instance)  # Updates the evaluation files based on the collected files.
+    """
+
+    for f in proj.collect_folder.rglob("*/*"):
         if not f.is_file():
             continue
-        f_cmp = eval_folder / f.relative_to(collect_folder)
+        f_cmp = proj.eval_folder / f.relative_to(proj.collect_folder)
         # 如果文件已存在且修改时间不比collect里的早，那么跳过
         if f_cmp.exists() and f.stat().st_mtime_ns <= f_cmp.stat().st_mtime_ns:
             continue

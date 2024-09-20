@@ -7,32 +7,60 @@ from jinja2 import Template
 from markdown import markdown
 from rich.console import Console
 
+from ..project import Project
 from .differ import get_all_differences, get_different_files
 from .emailer import Emailer, settings
 from .tinter import tint_raw_block
 
 console = Console()
 
-email_template = Template((Path(__file__).parent / "email_template.jinja").read_text(encoding="utf-8"))
-
-roster = pd.read_table(Path(__file__).parents[1] / "data" / "roster-2.tsv")
+email_template = Template((Path(__file__).with_name("email_template.jinja")).read_text(encoding="utf-8"))
 
 
 def send_emails(
-    folder: str, subject: str, *, preview: bool = False, send_self: bool = False, qq_only: bool = False
+    proj: Project,
+    *,
+    roster_path: Path,
+    mail_subject: str,
+    eval_name: str = "eval.xlsx",
+    preview: bool = False,
+    send_self: bool = False,
+    qq_only: bool = False,
 ) -> None:
-    collect_folder = Path(".") / "collect" / folder
-    eval_folder = Path(".") / "eval" / folder
+    """
+    Send emails to students with their evaluation feedback and attachments.
 
-    df = pd.read_excel(eval_folder / "eval.xlsx")
+    This function reads a roster and evaluation data, constructs email content,
+    and sends emails to students based on their scores.
+    It can operate in preview mode, allowing for content review without sending emails,
+    and can also send a copy to the sender.
+
+    Args:
+        proj (Project): The project instance that contains the collection and evaluation paths.
+        roster_path (Path): The path to the roster file.
+        mail_subject (str): The subject line for the email.
+        eval_name (str, optional): The name of the evaluation file. Defaults to "eval.xlsx".
+        preview (bool, optional): If True, emails will not be sent, only previewed. Defaults to False.
+        send_self (bool, optional): If True, a copy of the email will be sent to the sender. Defaults to False.
+        qq_only (bool, optional): If True, only QQ email addresses will be used. Defaults to False.
+
+    Returns:
+        None
+
+    Examples:
+        send_emails(Path('/path/to/collection'), 'Project1', roster_path=Path('/path/to/roster.tsv'), mail_subject='Feedback')
+    """
+
+    roster = pd.read_table(roster_path)
+
+    df = pd.read_excel(proj.eval_folder / eval_name)
 
     i1 = df.columns.to_list().index("性别") + 1
     i2 = df.columns.to_list().index("基础分")
 
-    log_path = Path(".") / "logs" / "mail" / folder
-    log_path.mkdir(parents=True, exist_ok=True)
+    proj.mails_folder.mkdir(parents=True, exist_ok=True)
 
-    subject = f"{subject} - 作业反馈"  # 加个后缀
+    mail_subject = f"{mail_subject} - 作业反馈"  # 加个后缀
 
     console.log(f"[b i magenta]Send emails to {len(df)} students! :rocket:")
 
@@ -55,9 +83,9 @@ def send_emails(
                 if "附加分" in row
                 else f"评分：{row['基础分']:.1f}"
             )
-            diff = get_all_differences(eval_folder / folder_name, collect_folder / folder_name)
+            diff = get_all_differences(proj.eval_folder / folder_name, proj.collect_folder / folder_name)
             # 附件
-            att = list(get_different_files(eval_folder / folder_name, collect_folder / folder_name))
+            att = list(get_different_files(proj.eval_folder / folder_name, proj.collect_folder / folder_name))
             # 设置内容
             content = email_template.render(
                 main_score=main_score,
@@ -67,16 +95,16 @@ def send_emails(
                 attach=len(att) > 0,
             )
             content = premailer.transform(content)  # css处理
-            (log_path / f"{idx:02}-{row['学号']}.html").write_text(content, "utf-8")
+            (proj.mails_folder / f"{idx:02}-{row['学号']}.html").write_text(content, "utf-8")
             # 调试输出
             console.print(f"[yellow]{idx} [blue]{folder_name}", end=" ")
-            console.print(f"[green]send to {receiver}: {subject}")
+            console.print(f"[green]send to {receiver}: {mail_subject}")
             console.print(main_score)
             console.print(f"[cyan]{att}")
             # 发送邮件
             if preview:  # 预览模式不发送邮件
                 continue
-            mail = emailer.launch().subject(f"{subject}").html(content)
+            mail = emailer.launch().subject(f"{mail_subject}").html(content)
             mail.attach_many(att)
             if send_self:  # 如果发给自己，发一个就结束
                 mail.send(settings.SMTP_USER)
